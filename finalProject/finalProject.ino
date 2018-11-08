@@ -1,23 +1,35 @@
+#include <LiquidCrystal.h>
+
+LiquidCrystal lcd(27,28,29,30,31,32);
+//Initialize 8-step pins, and 8 LED pins
 int ledPinArray[8] = {0, 1, 2, 3, 7, 8, 9, 10};
 int stepButtonPins[8] = {23, 22, 21, 20, 19, 18, 17, 16};
+
+//Initialize pins for 4 channels
 int kickChannel = 39;
 int snareChannel = 38;
 int hihatChannel = 37;
 int crashChannel = 36;
+
+
 int midiNotes[4] = {40, 42, 45, 47};
 int currentStep = 0;
 int channelDisplayed = 0;
 unsigned long lastStepTime = 0;
+
 boolean lastButtonState[8] = {LOW, LOW, LOW, LOW, LOW, LOW, LOW, LOW};
 boolean buttonState[8] = {LOW, LOW, LOW, LOW, LOW, LOW, LOW, LOW};
-boolean lastButtonState2 = LOW;
-boolean buttonState2 = LOW;
-boolean lastButtonState3 = LOW;
-boolean buttonState3 = LOW;
-boolean lastButtonState4 = LOW;
-boolean buttonState4 = LOW;
-boolean lastButtonState5 = LOW;
-boolean buttonState5 = LOW;
+
+boolean lastKickState = LOW;
+boolean kickState = LOW;
+boolean lastSnareState = LOW;
+boolean snareState = LOW;
+boolean lastHihatState = LOW;
+boolean hihatState = LOW;
+boolean lastCrashState = LOW;
+boolean crashState = LOW;
+
+//Set default sequence for all channels
 boolean on[4][8] = {
   {LOW, HIGH, LOW, HIGH, LOW, HIGH, LOW, HIGH},
   {HIGH, LOW, HIGH, LOW, HIGH, LOW, HIGH, LOW},
@@ -26,6 +38,7 @@ boolean on[4][8] = {
 };
 
 void setup() {
+  lcd.begin(16,2);
   for (int i = 0; i < 8; i++) {
     pinMode(ledPinArray[i], OUTPUT);
     pinMode(stepButtonPins[i], INPUT);
@@ -34,26 +47,37 @@ void setup() {
   pinMode(snareChannel, INPUT);
   pinMode(hihatChannel, INPUT);
   pinMode(crashChannel, INPUT);
-
-  //pinMode(nextChannelButtonPin, INPUT);
-  //pinMode(prevChannelButtonPin, INPUT);
-  //pinMode(switchPin, INPUT);
 }
 
 void loop() {
+  displayChannel();
+  displayTempo();
   sequence();
   checkButtons();
   setLeds();
 }
 
-void sequence() {
+void displayTempo() {
+  lcd.setCursor(0,1);
+  lcd.print("Tempo: ");
+  lcd.setCursor(7,1);
   int tempo = analogRead(A22);
+  int newTempo = map(tempo, 0, 1023, 200, 0);
+  lcd.print(newTempo);
+  if (newTempo < 100) {
+    lcd.print(newTempo);
+    lcd.setCursor(9,1);
+    lcd.print("           ");
+  }
+}
 
+void sequence() {
+  //Pot to set tempo
+  int tempo = analogRead(A22);
   if (millis() > lastStepTime + tempo) {
 
     //previous step off
     digitalWrite(ledPinArray[currentStep], LOW);
-
     incrementUp();
     lastStepTime = millis();
 
@@ -74,14 +98,14 @@ void checkButtons() {
       lastButtonState[i] = buttonState[i];
       buttonState[i] = digitalRead(stepButtonPins[i]);
 
-      lastButtonState2 = buttonState2;
-      buttonState2 = digitalRead(kickChannel);
-      lastButtonState3 = buttonState3;
-      buttonState3 = digitalRead(snareChannel);
-      lastButtonState4 = buttonState4;
-      buttonState4 = digitalRead(hihatChannel);
-      lastButtonState5 = buttonState5;
-      buttonState5 = digitalRead(crashChannel);
+      lastKickState = kickState;
+      kickState = digitalRead(kickChannel);
+      lastSnareState = snareState;
+      snareState = digitalRead(snareChannel);
+      lastHihatState = hihatState;
+      hihatState = digitalRead(hihatChannel);
+      lastCrashState = crashState;
+      crashState = digitalRead(crashChannel);
 
       if (buttonState[i] == HIGH && lastButtonState[i] == LOW) {
         if (on[channelDisplayed][i] == false)
@@ -89,25 +113,22 @@ void checkButtons() {
         else if (on[channelDisplayed][i] == true)
           on[channelDisplayed][i] = false;
       }
-
-      if (buttonState2 == HIGH && lastButtonState2 == LOW) {
+      if (kickState == HIGH && lastKickState == LOW) {
         channelDisplayed = 0;
       }
-      if (buttonState3 == HIGH && lastButtonState3 == LOW) {
+      if (snareState == HIGH && lastSnareState == LOW) {
         channelDisplayed = 1;
       }
-      if (buttonState4 == HIGH && lastButtonState4 == LOW) {
+      if (hihatState == HIGH && lastHihatState == LOW) {
         channelDisplayed = 2;
       }
-      if (buttonState5 == HIGH && lastButtonState5 == LOW) {
+      if (crashState == HIGH && lastCrashState == LOW) {
         channelDisplayed = 3;
       }
 
-
+      //Reset to beginning of sequence
       if (channelDisplayed == 7)
         channelDisplayed = 0;
-      if (channelDisplayed < 0)
-        channelDisplayed = 7;
     }
   }
 }
@@ -126,8 +147,25 @@ void setLeds() {
   }
 }
 
+//Step through sequence
 void incrementUp() {
   currentStep++;
   if (currentStep > 7)
     currentStep = 0;
+}
+
+void displayChannel() {
+  lcd.setCursor(0,0);
+  if (channelDisplayed == 0) {
+    lcd.print("Kick  ");
+  }
+  if (channelDisplayed == 1) {
+    lcd.print("Snare ");
+  } 
+  if (channelDisplayed == 2) {
+    lcd.print("Hi-Hat ");
+  }
+  if (channelDisplayed == 3) {
+    lcd.print("Crash ");
+  }
 }
