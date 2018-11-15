@@ -1,6 +1,6 @@
 #include <LiquidCrystal.h>
 
-LiquidCrystal lcd(27,28,29,30,31,32);
+LiquidCrystal lcd(27, 28, 29, 30, 31, 32);
 //Initialize 8-step pins, and 8 LED pins
 int ledPinArray[8] = {0, 1, 2, 3, 7, 8, 9, 10};
 int stepButtonPins[8] = {23, 22, 21, 20, 19, 18, 17, 16};
@@ -11,6 +11,11 @@ int snareChannel = 38;
 int hihatChannel = 37;
 int crashChannel = 36;
 
+//Initialize LEDs for channels
+int kickLED = 11;
+int snareLED = 12;
+int hihatLED = 24;
+int crashLED = 25;
 
 int midiNotes[4] = {40, 42, 45, 47};
 int currentStep = 0;
@@ -38,7 +43,7 @@ boolean on[4][8] = {
 };
 
 void setup() {
-  lcd.begin(16,2);
+  lcd.begin(16, 2);
   for (int i = 0; i < 8; i++) {
     pinMode(ledPinArray[i], OUTPUT);
     pinMode(stepButtonPins[i], INPUT);
@@ -47,6 +52,10 @@ void setup() {
   pinMode(snareChannel, INPUT);
   pinMode(hihatChannel, INPUT);
   pinMode(crashChannel, INPUT);
+  pinMode(kickLED, OUTPUT);
+  pinMode(snareLED, OUTPUT);
+  pinMode(hihatLED, OUTPUT);
+  pinMode(crashLED, OUTPUT);
 }
 
 void loop() {
@@ -58,15 +67,15 @@ void loop() {
 }
 
 void displayTempo() {
-  lcd.setCursor(0,1);
+  lcd.setCursor(0, 1);
   lcd.print("Tempo: ");
-  lcd.setCursor(7,1);
+  lcd.setCursor(7, 1);
   int tempo = analogRead(A22);
   int newTempo = map(tempo, 0, 1023, 200, 0);
   lcd.print(newTempo);
   if (newTempo < 100) {
     lcd.print(newTempo);
-    lcd.setCursor(9,1);
+    lcd.setCursor(9, 1);
     lcd.print("           ");
   }
 }
@@ -77,11 +86,11 @@ void sequence() {
   if (millis() > lastStepTime + tempo) {
 
     //previous step off
-    digitalWrite(ledPinArray[currentStep], LOW);
+    //    digitalWrite(ledPinArray[currentStep], LOW);
     incrementUp();
     lastStepTime = millis();
 
-    digitalWrite(ledPinArray[currentStep], HIGH);
+    //    digitalWrite(ledPinArray[currentStep], HIGH);
 
     for (int i = 0; i < 8; i++) {
       if (on[i][currentStep] == true) {
@@ -135,9 +144,9 @@ void checkButtons() {
 
 void setLeds() {
   for (int i = 0; i < 8; i++) {
-    if (on[channelDisplayed][i] == true) {
+    if (on[channelDisplayed][i] == true || i == currentStep) {
       digitalWrite(ledPinArray[i], HIGH);
-      digitalWrite(ledPinArray[currentStep], HIGH);
+      //      digitalWrite(ledPinArray[currentStep], HIGH);
 
     }
     else if (on[channelDisplayed][i] == false) {
@@ -155,17 +164,21 @@ void incrementUp() {
 }
 
 void displayChannel() {
-  lcd.setCursor(0,0);
+  lcd.setCursor(0, 0);
   if (channelDisplayed == 0) {
     lcd.print("Kick  ");
+    digitalWrite(kickLED, HIGH);
   }
   if (channelDisplayed == 1) {
     lcd.print("Snare ");
-  } 
+    digitalWrite(snareLED, HIGH);
+  }
   if (channelDisplayed == 2) {
     lcd.print("Hi-Hat ");
+    digitalWrite(hihatLED, HIGH);
   }
   if (channelDisplayed == 3) {
     lcd.print("Crash ");
+    digitalWrite(crashLED, HIGH);
   }
 }
