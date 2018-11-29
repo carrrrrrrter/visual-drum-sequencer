@@ -1,15 +1,18 @@
 #include <LiquidCrystal.h>
 
 LiquidCrystal lcd(27, 28, 29, 30, 31, 32);
+
 //Initialize 8-step pins, and 8 LED pins
 int ledPinArray[8] = {0, 1, 2, 3, 7, 8, 9, 10};
 int stepButtonPins[8] = {23, 22, 21, 20, 19, 18, 17, 16};
+int startButton = 11;
+int startLED = 12;
 
 //Initialize pins for 4 channels
-int kickChannel = 39;
-int snareChannel = 38;
-int hihatChannel = 37;
-int crashChannel = 36;
+int kickChannel = 39; //Midi note: C1, 24
+int snareChannel = 38; //Midi note: D1, 26
+int hihatChannel = 37; //Midi note: F#1, 30
+int crashChannel = 36; //Midi note: C#2, 37
 
 //Initialize LEDs for channels
 int kickLED = 11;
@@ -17,7 +20,11 @@ int snareLED = 12;
 int hihatLED = 24;
 int crashLED = 25;
 
-int midiNotes[4] = {40, 42, 45, 47};
+//Initialize Joystick Pins
+int xPin = A0;
+int yPin = A1;
+
+int midiNotes[4] = {36, 40, 42, 49};
 int currentStep = 0;
 int channelDisplayed = 0;
 unsigned long lastStepTime = 0;
@@ -36,22 +43,26 @@ boolean crashState = LOW;
 
 //Set default sequence for all channels
 boolean on[4][8] = {
-  {LOW, HIGH, LOW, HIGH, LOW, HIGH, LOW, HIGH},
-  {HIGH, LOW, HIGH, LOW, HIGH, LOW, HIGH, LOW},
-  {LOW, LOW, HIGH, HIGH, LOW, LOW, HIGH, HIGH},
-  {HIGH, HIGH, LOW, LOW, HIGH, HIGH, LOW, LOW}
+  {LOW, LOW, LOW, LOW, LOW, LOW, LOW, LOW},
+  {LOW, LOW, LOW, LOW, LOW, LOW, LOW, LOW},
+  {LOW, LOW, LOW, LOW, LOW, LOW, LOW, LOW},
+  {LOW, LOW, LOW, LOW, LOW, LOW, LOW, LOW}
 };
 
 void setup() {
+  Serial.begin(9600); //Start serial comm. with Processing
+
   lcd.begin(16, 2);
   for (int i = 0; i < 8; i++) {
     pinMode(ledPinArray[i], OUTPUT);
     pinMode(stepButtonPins[i], INPUT);
   }
+  pinMode(startButton, INPUT);
   pinMode(kickChannel, INPUT);
   pinMode(snareChannel, INPUT);
   pinMode(hihatChannel, INPUT);
   pinMode(crashChannel, INPUT);
+  pinMode(startLED, OUTPUT);
   pinMode(kickLED, OUTPUT);
   pinMode(snareLED, OUTPUT);
   pinMode(hihatLED, OUTPUT);
@@ -81,21 +92,19 @@ void displayTempo() {
 }
 
 void sequence() {
+  int velocity = map(analogRead(xPin), 0, 1023, 0, 127);
+  int pitchBend = map(analogRead(yPin), 0, 1023, 0, 16383);
+
   //Pot to set tempo
   int tempo = analogRead(A22);
   if (millis() > lastStepTime + tempo) {
-
-    //previous step off
-    //    digitalWrite(ledPinArray[currentStep], LOW);
     incrementUp();
     lastStepTime = millis();
-
-    //    digitalWrite(ledPinArray[currentStep], HIGH);
 
     for (int i = 0; i < 8; i++) {
       if (on[i][currentStep] == true) {
         usbMIDI.sendNoteOff(midiNotes[i], 0, 1);
-        usbMIDI.sendNoteOn(midiNotes[i], 127, 1);
+        usbMIDI.sendNoteOn(midiNotes[i], velocity, 1);
       }
     }
   }
