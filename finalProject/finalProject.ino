@@ -1,3 +1,10 @@
+/*
+ * Drum Sequencer for Digital Electronics final project
+ * - 8-step, 4-channel drum sequencer
+ * - When a step on the channel is active, led button will light up
+ *   and the button of the current channel will light up
+ * - Joystick controls velocity of drums on one x-axis
+ */
 #include <LiquidCrystal.h>
 
 LiquidCrystal lcd(27, 28, 29, 30, 31, 32);
@@ -15,16 +22,19 @@ int hihatChannel = 37; //Midi note: F#1, 30
 int crashChannel = 36; //Midi note: C#2, 37
 
 //Initialize LEDs for channels
-int kickLED = 11;
-int snareLED = 12;
-int hihatLED = 24;
-int crashLED = 25;
+int kickLED = 11; //red
+int snareLED = 12; //yellow
+int hihatLED = 24; //green
+int crashLED = 25; //blue
 
 //Initialize Joystick Pins
 int xPin = A0;
 int yPin = A1;
+int switchPin = 14;
+boolean startState = LOW;
 
-int midiNotes[4] = {36, 40, 42, 49};
+//int midiNotes[4] = {36, 40, 42, 49};
+int midiNotes[4] = {24, 26, 29, 32};
 int currentStep = 0;
 int channelDisplayed = 0;
 unsigned long lastStepTime = 0;
@@ -67,6 +77,7 @@ void setup() {
   pinMode(snareLED, OUTPUT);
   pinMode(hihatLED, OUTPUT);
   pinMode(crashLED, OUTPUT);
+  pinMode(switchPin, INPUT);
 }
 
 void loop() {
@@ -94,7 +105,6 @@ void displayTempo() {
 void sequence() {
   int velocity = map(analogRead(xPin), 0, 1023, 0, 127);
   int pitchBend = map(analogRead(yPin), 0, 1023, 0, 16383);
-
   //Pot to set tempo
   int tempo = analogRead(A22);
   if (millis() > lastStepTime + tempo) {
@@ -105,8 +115,11 @@ void sequence() {
       if (on[i][currentStep] == true) {
         usbMIDI.sendNoteOff(midiNotes[i], 0, 1);
         usbMIDI.sendNoteOn(midiNotes[i], velocity, 1);
+        usbMIDI.sendPitchBend(pitchBend, 1);
       }
     }
+    //Send kick data to Processing
+    if (on[0][currentStep] == true) Serial.write(0);
   }
 }
 
@@ -179,14 +192,17 @@ void displayChannel() {
     digitalWrite(kickLED, HIGH);
   }
   if (channelDisplayed == 1) {
+    Serial.write(1);
     lcd.print("Snare ");
     digitalWrite(snareLED, HIGH);
   }
   if (channelDisplayed == 2) {
+    Serial.write(2);
     lcd.print("Hi-Hat ");
     digitalWrite(hihatLED, HIGH);
   }
   if (channelDisplayed == 3) {
+    Serial.write(3);
     lcd.print("Crash ");
     digitalWrite(crashLED, HIGH);
   }
