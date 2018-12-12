@@ -12,8 +12,8 @@ LiquidCrystal lcd(27, 28, 29, 30, 31, 32);
 //Initialize 8-step pins, and 8 LED pins
 int ledPinArray[8] = {0, 1, 2, 3, 7, 8, 9, 10};
 int stepButtonPins[8] = {23, 22, 21, 20, 19, 18, 17, 16};
-int startButton = 11;
-int startLED = 12;
+//int startButton = 11;
+//int startLED = 12;
 
 //Initialize pins for 4 channels
 int kickChannel = 39; //Midi note: C1, 24
@@ -67,12 +67,12 @@ void setup() {
     pinMode(ledPinArray[i], OUTPUT);
     pinMode(stepButtonPins[i], INPUT);
   }
-  pinMode(startButton, INPUT);
+//  pinMode(startButton, INPUT);
   pinMode(kickChannel, INPUT);
   pinMode(snareChannel, INPUT);
   pinMode(hihatChannel, INPUT);
   pinMode(crashChannel, INPUT);
-  pinMode(startLED, OUTPUT);
+//  pinMode(startLED, OUTPUT);
   pinMode(kickLED, OUTPUT);
   pinMode(snareLED, OUTPUT);
   pinMode(hihatLED, OUTPUT);
@@ -104,7 +104,6 @@ void displayTempo() {
 
 void sequence() {
   int velocity = map(analogRead(xPin), 0, 1023, 0, 127);
-  int pitchBend = map(analogRead(yPin), 0, 1023, 0, 16383);
   //Pot to set tempo
   int tempo = analogRead(A22);
   if (millis() > lastStepTime + tempo) {
@@ -115,11 +114,10 @@ void sequence() {
       if (on[i][currentStep] == true) {
         usbMIDI.sendNoteOff(midiNotes[i], 0, 1);
         usbMIDI.sendNoteOn(midiNotes[i], velocity, 1);
-        usbMIDI.sendPitchBend(pitchBend, 1);
       }
     }
     //Send kick data to Processing
-    if (on[0][currentStep] == true) Serial.write(0);
+    if (on[0][currentStep] == true) Serial.write(10);
   }
 }
 
@@ -188,6 +186,7 @@ void incrementUp() {
 void displayChannel() {
   lcd.setCursor(0, 0);
   if (channelDisplayed == 0) {
+    Serial.write(0);
     lcd.print("Kick  ");
     digitalWrite(kickLED, HIGH);
   }
