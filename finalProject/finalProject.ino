@@ -189,20 +189,32 @@ void displayChannel() {
     Serial.write(0);
     lcd.print("Kick  ");
     digitalWrite(kickLED, HIGH);
+    digitalWrite(snareLED, LOW);
+    digitalWrite(hihatLED, LOW);
+    digitalWrite(crashLED, LOW);
   }
   if (channelDisplayed == 1) {
     Serial.write(1);
     lcd.print("Snare ");
+    digitalWrite(kickLED, LOW);
     digitalWrite(snareLED, HIGH);
+    digitalWrite(hihatLED, LOW);
+    digitalWrite(crashLED, LOW);
   }
   if (channelDisplayed == 2) {
     Serial.write(2);
     lcd.print("Hi-Hat ");
+    digitalWrite(kickLED, LOW);
+    digitalWrite(snareLED, LOW);
     digitalWrite(hihatLED, HIGH);
+    digitalWrite(crashLED, LOW);
   }
   if (channelDisplayed == 3) {
     Serial.write(3);
     lcd.print("Crash ");
+    digitalWrite(kickLED, LOW);
+    digitalWrite(snareLED, LOW);
+    digitalWrite(hihatLED, LOW);
     digitalWrite(crashLED, HIGH);
   }
 }
